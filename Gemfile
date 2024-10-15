@@ -1,5 +1,8 @@
 source "https://rubygems.org"
 
+gem "nokogiri"
+gem "selenium-webdriver"
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.2.1"
 # Use sqlite3 as the database for Active Record
@@ -39,5 +42,3 @@ group :development, :test do
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
 end
-
-
