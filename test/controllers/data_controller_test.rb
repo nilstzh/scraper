@@ -1,15 +1,15 @@
-require 'minitest/autorun'
+require "minitest/autorun"
 
 class DataControllerTest < ActionController::TestCase
   def setup
     @valid_url = "http://example.com"
     @invalid_url = "invalid_url"
-    @valid_fields = { title: 'h1', description: '.desc' }
+    @valid_fields = { title: "h1", description: ".desc" }
     @scraper_mock = Minitest::Mock.new
   end
 
   def test_scrape_success
-    scraped_data = { title: 'Sample Title', description: 'Sample Description' }
+    scraped_data = { title: "Sample Title", description: "Sample Description" }
     @scraper_mock.expect(:run, scraped_data)
 
     Scraper.stub :new, @scraper_mock do
