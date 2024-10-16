@@ -22,13 +22,18 @@ class Scraper
     cached_page = Rails.cache.read(cache_key)
     return cached_page if cached_page.present?
 
-    driver = selenium_driver()
-    driver.navigate.to(@url)
-    page = driver.page_source
-    driver.quit
-
+    page = http_client().get(@url)
     Rails.cache.write(cache_key, page, expires_in: CACHE_TTL)
     page
+  end
+
+  def http_client
+    case ENV['HTTP_CLIENT']
+    when 'selenium' then Clients::Selenium
+    when 'httparty' then Clients::Httparty
+    else
+      raise "Unknown HTTP client specified: #{ENV['HTTP_CLIENT']}"
+    end
   end
 
   def scrape(page)
@@ -73,16 +78,6 @@ class Scraper
     return false unless string.match?(/^https?:\/\/[\w\d-]+\.[\w\d-]+/)
 
     true
-  end
-
-  def selenium_driver
-    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"\
-                 "Chrome/92.0.4515.159 Safari/537.36"
-
-    options = Selenium::WebDriver::Chrome::Options.new
-    options.add_argument("--headless")
-    options.add_argument("--user-agent=#{user_agent}")
-    Selenium::WebDriver.for :chrome, options: options
   end
 
   def cache_key

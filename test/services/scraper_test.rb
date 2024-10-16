@@ -37,45 +37,37 @@ class ScraperTest < Minitest::Test
     end
   end
 
-  def test_fetch_page_without_cache
-    mock_driver = Minitest::Mock.new
-    mock_navigate = Minitest::Mock.new
-    fetched_page = "<html><body><h1>Title</h1></body></html>"
+  def test_fetch_page_with_httparty_client
+    ENV.stub(:[], 'httparty') do
+      fetched_page = "<html><body><h1>Title from HTTParty</h1></body></html>"
 
-    mock_driver.expect(:navigate, mock_navigate)
-    mock_navigate.expect(:to, nil, [@valid_url])
-    mock_driver.expect(:page_source, fetched_page)
-    mock_driver.expect(:quit, nil)
-
-    Rails.cache.stub(:read, nil) do
-      Rails.cache.stub(:write, true) do
-        Selenium::WebDriver.stub :for, mock_driver do
-          assert_equal fetched_page, @scraper.send(:fetch_page)
+      Clients::Httparty.stub(:get, fetched_page) do
+        Rails.cache.stub(:read, nil) do
+          Rails.cache.stub(:write, true) do
+            assert_equal fetched_page, @scraper.send(:fetch_page)
+          end
         end
       end
     end
-
-    mock_driver.verify
-    mock_navigate.verify
   end
 
-  def test_fetch_page_caches_result
-    fetched_page = "<html><body><h1>Title</h1></body></html>"
+  def test_fetch_page_with_selenium_client
+    ENV.stub(:[], 'selenium') do
+      fetched_page = "<html><body><h1>Title from Selenium</h1></body></html>"
 
-    Rails.cache.stub(:read, nil) do
-      mock_driver = Minitest::Mock.new
-      mock_navigate = Minitest::Mock.new
-
-      mock_driver.expect(:navigate, mock_navigate)
-      mock_navigate.expect(:to, nil, [@valid_url])
-      mock_driver.expect(:page_source, fetched_page)
-      mock_driver.expect(:quit, nil)
-
-      Selenium::WebDriver.stub :for, mock_driver do
-        Rails.cache.stub(:write, true) do
-          @scraper.send(:fetch_page)
+      Clients::Selenium.stub(:get, fetched_page) do
+        Rails.cache.stub(:read, nil) do
+          Rails.cache.stub(:write, true) do
+            assert_equal fetched_page, @scraper.send(:fetch_page)
+          end
         end
       end
+    end
+  end
+
+  def test_http_client_raises_error_for_unknown_client
+    ENV.stub(:[], 'unknown_client') do
+      assert_raises(RuntimeError, "Unknown HTTP client specified: unknown_client") { @scraper.send(:http_client) }
     end
   end
 
