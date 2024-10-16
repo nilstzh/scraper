@@ -1,4 +1,6 @@
 class Scraper
+  CACHE_TTL = 1.hour
+
   def initialize(url, fields)
     @url = url
 
@@ -17,11 +19,15 @@ class Scraper
   private
 
   def fetch_page
+    cached_page = Rails.cache.read(cache_key)
+    return cached_page if cached_page.present?
+
     driver = selenium_driver()
     driver.navigate.to(@url)
     page = driver.page_source
     driver.quit
 
+    Rails.cache.write(cache_key, page, expires_in: CACHE_TTL)
     page
   end
 
@@ -77,6 +83,10 @@ class Scraper
     options.add_argument("--headless")
     options.add_argument("--user-agent=#{user_agent}")
     Selenium::WebDriver.for :chrome, options: options
+  end
+
+  def cache_key
+    "scraper:page:#{Digest::MD5.hexdigest(@url)}"
   end
 
   class ScraperError < StandardError; end
