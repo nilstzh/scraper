@@ -6,7 +6,7 @@ class Clients::SeleniumTest < Minitest::Test
     mock_navigate = Minitest::Mock.new
 
     mock_driver.expect(:navigate, mock_navigate)
-    mock_navigate.expect(:to, nil, ["http://example.com"])
+    mock_navigate.expect(:to, nil, [ "http://example.com" ])
     mock_driver.expect(:page_source, "<html><body><h1>Selenium Title</h1></body></html>")
     mock_driver.expect(:quit, nil)
 

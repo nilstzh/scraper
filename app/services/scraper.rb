@@ -28,9 +28,9 @@ class Scraper
   end
 
   def http_client
-    case ENV['HTTP_CLIENT']
-    when 'selenium' then Clients::Selenium
-    when 'httparty' then Clients::Httparty
+    case ENV["HTTP_CLIENT"]
+    when "selenium" then Clients::Selenium
+    when "httparty" then Clients::Httparty
     else
       raise "Unknown HTTP client specified: #{ENV['HTTP_CLIENT']}"
     end

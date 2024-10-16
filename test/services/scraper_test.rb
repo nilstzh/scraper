@@ -38,7 +38,7 @@ class ScraperTest < Minitest::Test
   end
 
   def test_fetch_page_with_httparty_client
-    ENV.stub(:[], 'httparty') do
+    ENV.stub(:[], "httparty") do
       fetched_page = "<html><body><h1>Title from HTTParty</h1></body></html>"
 
       Clients::Httparty.stub(:get, fetched_page) do
@@ -52,7 +52,7 @@ class ScraperTest < Minitest::Test
   end
 
   def test_fetch_page_with_selenium_client
-    ENV.stub(:[], 'selenium') do
+    ENV.stub(:[], "selenium") do
       fetched_page = "<html><body><h1>Title from Selenium</h1></body></html>"
 
       Clients::Selenium.stub(:get, fetched_page) do
@@ -66,7 +66,7 @@ class ScraperTest < Minitest::Test
   end
 
   def test_http_client_raises_error_for_unknown_client
-    ENV.stub(:[], 'unknown_client') do
+    ENV.stub(:[], "unknown_client") do
       assert_raises(RuntimeError, "Unknown HTTP client specified: unknown_client") { @scraper.send(:http_client) }
     end
   end
