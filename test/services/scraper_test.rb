@@ -26,27 +26,57 @@ class ScraperTest < Minitest::Test
 
   def test_valid_url
     assert @scraper.send(:valid_url?, "http://example.com")
-    assert_not @scraper.send(:valid_url?, "invalid_url")
-    assert_not @scraper.send(:valid_url?, "")
+    refute @scraper.send(:valid_url?, "invalid_url")
+    refute @scraper.send(:valid_url?, "")
   end
 
-  def test_fetch_page
+  def test_fetch_page_with_cache
+    cached_page = "<html><body><h1>Cached Title</h1></body></html>"
+    Rails.cache.stub(:read, cached_page) do
+      assert_equal cached_page, @scraper.send(:fetch_page)
+    end
+  end
+
+  def test_fetch_page_without_cache
     mock_driver = Minitest::Mock.new
     mock_navigate = Minitest::Mock.new
+    fetched_page = "<html><body><h1>Title</h1></body></html>"
 
     mock_driver.expect(:navigate, mock_navigate)
+    mock_navigate.expect(:to, nil, [@valid_url])
+    mock_driver.expect(:page_source, fetched_page)
     mock_driver.expect(:quit, nil)
 
-    mock_navigate.expect(:to, nil, [ @valid_url ])
-
-    mock_driver.expect(:page_source, "<html><body><h1>Title</h1></body></html>")
-
-    Selenium::WebDriver.stub :for, mock_driver do
-      assert_equal "<html><body><h1>Title</h1></body></html>", @scraper.send(:fetch_page)
+    Rails.cache.stub(:read, nil) do
+      Rails.cache.stub(:write, true) do
+        Selenium::WebDriver.stub :for, mock_driver do
+          assert_equal fetched_page, @scraper.send(:fetch_page)
+        end
+      end
     end
 
     mock_driver.verify
     mock_navigate.verify
+  end
+
+  def test_fetch_page_caches_result
+    fetched_page = "<html><body><h1>Title</h1></body></html>"
+
+    Rails.cache.stub(:read, nil) do
+      mock_driver = Minitest::Mock.new
+      mock_navigate = Minitest::Mock.new
+
+      mock_driver.expect(:navigate, mock_navigate)
+      mock_navigate.expect(:to, nil, [@valid_url])
+      mock_driver.expect(:page_source, fetched_page)
+      mock_driver.expect(:quit, nil)
+
+      Selenium::WebDriver.stub :for, mock_driver do
+        Rails.cache.stub(:write, true) do
+          @scraper.send(:fetch_page)
+        end
+      end
+    end
   end
 
   def test_scrape_by_selectors
@@ -68,5 +98,10 @@ class ScraperTest < Minitest::Test
     result = @scraper.send(:scrape, page)
     expected_result = { title: "Title", description: "Description", meta: { "author" => "John Doe", "keywords" => "ruby, scraping" } }
     assert_equal expected_result, result
+  end
+
+  def test_cache_key_generation
+    expected_cache_key = "scraper:page:#{Digest::MD5.hexdigest(@valid_url)}"
+    assert_equal expected_cache_key, @scraper.send(:cache_key)
   end
 end
